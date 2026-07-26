@@ -6,7 +6,7 @@ import {
 import {
   Scale, Dumbbell, TrendingUp, Compass, Settings as Cog,
   Plus, Minus, Check, AlertTriangle, Info, ChevronLeft, ChevronRight,
-  RotateCcw, Trash2
+  RotateCcw, Trash2, Download, Upload
 } from "lucide-react";
 
 /* ───────────────────────── helpers ───────────────────────── */
@@ -1179,6 +1179,49 @@ function Profile({ profile, save }) {
   const [f, setF] = useState(profile);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const [confirm, setConfirm] = useState(false);
+  const [importState, setImportState] = useState(null);
+
+  const downloadBackup = async () => {
+    const [p, log, workouts] = await Promise.all([
+      store.get("profile", null),
+      store.get("daily-log", {}),
+      store.get("workout-log", []),
+    ]);
+    const backup = { app: "trener", version: 1, exportedAt: new Date().toISOString(), profile: p, log, workouts };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trener-zaloha-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (data.app !== "trener" || typeof data.profile === "undefined") {
+        setImportState({ error: "Tento súbor nevyzerá ako záloha z tejto appky." });
+        return;
+      }
+      setImportState({ pending: data });
+    } catch {
+      setImportState({ error: "Súbor sa nedá prečítať – nie je to platný JSON." });
+    }
+  };
+
+  const confirmRestore = async () => {
+    const data = importState.pending;
+    await store.set("profile", data.profile ?? null);
+    await store.set("daily-log", data.log ?? {});
+    await store.set("workout-log", data.workouts ?? []);
+    window.location.reload();
+  };
 
   const bmr = bmrMifflin(f.sex, f.weight, f.height, f.age);
   const tdee = bmr * (ACTIVITY.find((a) => a.id === f.activity)?.f || 1.375);
@@ -1245,8 +1288,52 @@ function Profile({ profile, save }) {
         Uložiť profil
       </button>
 
+      <Card className="space-y-3">
+        <Label>Záloha</Label>
+        <p className="text-sm text-slate-500">Dáta sú len v tomto prehliadači. Stiahni si zálohu, nech o ne neprídeš.</p>
+        <div className="flex gap-2">
+          <button
+            onClick={downloadBackup}
+            className="flex-1 flex items-center justify-center gap-2 border border-slate-300 bg-white hover:border-slate-400 py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]"
+          >
+            <Download size={14} /> Stiahnuť
+          </button>
+          <button
+            onClick={() => document.getElementById("backup-file-input").click()}
+            className="flex-1 flex items-center justify-center gap-2 border border-slate-300 bg-white hover:border-slate-400 py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]"
+          >
+            <Upload size={14} /> Nahrať
+          </button>
+          <input id="backup-file-input" type="file" accept="application/json" className="hidden" onChange={handleFileSelect} />
+        </div>
+        {importState?.error && <p className="text-sm text-rose-700">{importState.error}</p>}
+        {importState?.pending && (
+          <div className="p-3 bg-amber-50 border-l-4 border-amber-600 space-y-3">
+            <p className="text-sm text-slate-700">
+              Nahradí všetky súčasné dáta zálohou
+              {importState.pending.exportedAt ? ` z ${new Date(importState.pending.exportedAt).toLocaleDateString("sk-SK")}` : ""}.
+              Späť sa to vrátiť nedá.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={confirmRestore}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]"
+              >
+                Obnoviť
+              </button>
+              <button
+                onClick={() => setImportState(null)}
+                className="flex-1 border border-slate-300 py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]"
+              >
+                Zrušiť
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
+
       <Card>
-        <Label>Dáta</Label>
+        <Label>Vymazať dáta</Label>
         {!confirm ? (
           <button onClick={() => setConfirm(true)} className="text-sm text-slate-500 hover:text-rose-700 flex items-center gap-2">
             <RotateCcw size={14} /> Vymazať všetko a začať odznova
