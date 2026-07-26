@@ -82,22 +82,6 @@ const TEMPLATES = {
 };
 const SPLITS = Object.keys(TEMPLATES);
 
-const SEED_WORKOUTS = [
-  { date: "2026-05-06", split: "UPPER A", ex: [["Bench Press", [[110, 5], [90, 8]]], ["Lat Pulldown", [[90, 8], [90, 6]]], ["Incline DB Press", [[36, 6], [28, 8]]], ["Iso lateral pulldown", [[50, 8], [40, 8]]], ["Lateral Raises stroj", [[60, 8], [50, 8]]], ["Triceps Pushdown", [[32.5, 10], [32.5, 8]]], ["EZ Curl", [[45, 8], [40, 8]]]] },
-  { date: "2026-05-07", split: "LOWER A", ex: [["Back Squat", [[110, 4], [90, 6]]], ["Romanian Deadlift", [[80, 8], [80, 8]]], ["Leg Press", [[250, 8], [250, 6]]], ["Leg Curl", [[175, 8], [145, 8]]], ["Calves", [[157, 12], [157, 12]]], ["Hyperextenzia", [[45, 8], [45, 8]]]] },
-  { date: "2026-05-08", split: "UPPER B", ex: [["OHP", [[36, 8], [30, 8]]], ["Pullups / Pulldown", [[100, 8], [80, 8]]], ["DB Bench", [[46, 6], [36, 6]]], ["Cable Row", [[90, 10], [45, 8]]], ["Rear Delt Fly", [[30, 10], [30, 8]]], ["Skullcrusher", [[40, 8], [40, 8]]], ["Hammer Curl", [[26, 8], [24, 8]]]] },
-  { date: "2026-05-10", split: "LOWER B", ex: [["Hack Squat", [[80, 10], [80, 10]]], ["Leg Press", [[270, 8], [250, 8]]], ["Bulgarian Split Squat", [[25, 8], [25, 6]]], ["Leg Curl", [[67, 8], [67, 8]]], ["Calves", [[167, 10], [167, 10]]], ["Hyperextenzia", [[50, 8], [50, 8]]]] },
-  { date: "2026-06-23", split: "UPPER A", ex: [["Bench Press", [[110, 6], [100, 8]]], ["Lat Pulldown", [[100, 8], [80, 8]]], ["Incline DB Press", [[40, 7], [32, 5]]], ["Iso lateral pulldown", [[40, 8], [40, 8]]], ["Lateral Raises stroj", [[50, 10], [50, 8]]], ["Triceps Pushdown", [[36.25, 8], [36.25, 6]]], ["EZ Curl", [[40, 8], [40, 8]]]] },
-  { date: "2026-06-25", split: "LOWER A", ex: [["Back Squat", [[110, 3], [90, 5]]], ["Romanian Deadlift", [[90, 6], [90, 6]]], ["Leg Press", [[300, 6], [275, 6]]], ["Leg Curl", [[190, 8], [190, 8]]], ["Calves", [[197, 12], [197, 12]]], ["Hyperextenzia", [[50, 8], [50, 8]]]] },
-  { date: "2026-06-26", split: "UPPER B", ex: [["OHP", [[40, 6], [32, 8]]], ["Pullups / Pulldown", [[110, 5], [80, 8]]], ["DB Bench", [[44, 6], [36, 6]]], ["Cable Row", [[100, 8], [80, 8]]], ["Rear Delt Fly", [[40, 10], [40, 7]]], ["Skullcrusher", [[40, 6], [40, 5]]], ["Hammer Curl", [[26, 8], [24, 8]]]] },
-  { date: "2026-06-28", split: "LOWER B", ex: [["Hack Squat", [[110, 6], [90, 8]]], ["Leg Press", [[300, 6], [250, 8]]], ["Bulgarian Split Squat", [[40, 8], [20, 8]]], ["Leg Curl", [[74, 8], [74, 5]]], ["Calves", [[189, 12], [189, 12]]], ["Hyperextenzia", [[50, 8], [50, 8]]]] },
-].map((w, i) => ({
-  id: `seed-${i}`,
-  date: w.date,
-  split: w.split,
-  exercises: w.ex.map(([name, sets]) => ({ name, sets: sets.map(([weight, reps]) => ({ weight, reps })) })),
-}));
-
 /* ───────────────────────── storage ───────────────────────── */
 
 const PREFIX = "trener:";
@@ -352,11 +336,10 @@ export default function App() {
     (async () => {
       const p = await store.get("profile", null);
       const l = await store.get("daily-log", {});
-      const w = await store.get("workout-log", null);
+      const w = await store.get("workout-log", []);
       setProfile(p);
       setLog(l || {});
-      setWorkouts(w === null ? SEED_WORKOUTS : w);
-      if (w === null) store.set("workout-log", SEED_WORKOUTS);
+      setWorkouts(w || []);
       setLoading(false);
     })();
   }, []);
@@ -476,7 +459,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5 space-y-4">
+      <main key={tab} className="max-w-3xl mx-auto px-4 py-5 space-y-4 animate-fade-in">
         {tab === "dnes" && <Today profile={profile} log={log} saveLog={saveLog} avgNow={avgNow} rate={rate} />}
         {tab === "trening" && <Training workouts={workouts} save={saveWorkouts} />}
         {tab === "progres" && <Progress series={series} weekAvgs={weekAvgs} workouts={workouts} profile={profile} />}
@@ -485,7 +468,7 @@ export default function App() {
       </main>
 
       {saved && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs uppercase tracking-widest px-4 py-2 rounded-sm flex items-center gap-2">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs uppercase tracking-widest px-4 py-2 rounded-sm flex items-center gap-2 animate-fade-in">
           <Check size={12} /> Uložené
         </div>
       )}
@@ -623,7 +606,7 @@ function Onboarding({ onDone }) {
               startDate: todayISO(),
             })
           }
-          className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+          className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-slate-900 active:scale-[0.98]"
         >
           Začať
         </button>
@@ -874,7 +857,7 @@ function Training({ workouts, save }) {
             if (clean.exercises.length) save([...workouts, clean]);
             setDraft(null);
           }}
-          className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-600"
+          className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-600 active:scale-[0.98]"
         >
           Uložiť tréning
         </button>
@@ -910,7 +893,7 @@ function Training({ workouts, save }) {
         </div>
         <button
           onClick={startSession}
-          className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+          className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-slate-900 active:scale-[0.98]"
         >
           Otvoriť {split}
         </button>
@@ -1257,7 +1240,7 @@ function Profile({ profile, save }) {
 
       <button
         onClick={() => save({ ...f, tdee: Math.round(tdee), bmr: Math.round(bmr) })}
-        className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-600"
+        className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 text-sm uppercase tracking-widest rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-600 active:scale-[0.98]"
       >
         Uložiť profil
       </button>
@@ -1279,11 +1262,11 @@ function Profile({ profile, save }) {
                   await store.set("workout-log", []);
                   window.location.reload();
                 }}
-                className="flex-1 bg-rose-700 text-white py-2 text-sm uppercase tracking-widest rounded-sm"
+                className="flex-1 bg-rose-700 text-white py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]"
               >
                 Vymazať
               </button>
-              <button onClick={() => setConfirm(false)} className="flex-1 border border-slate-300 py-2 text-sm uppercase tracking-widest rounded-sm">
+              <button onClick={() => setConfirm(false)} className="flex-1 border border-slate-300 py-2 text-sm uppercase tracking-widest rounded-sm active:scale-[0.98]">
                 Späť
               </button>
             </div>
