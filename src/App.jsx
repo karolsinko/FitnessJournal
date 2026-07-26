@@ -438,16 +438,16 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-100 text-slate-900 pb-24" style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-      <header className="border-b border-slate-200 bg-stone-50 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-baseline justify-between">
-          <div>
+    <div className="min-h-screen bg-stone-100 text-slate-900 pb-24 overflow-x-hidden" style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+      <header className="border-b border-slate-200 bg-stone-50 sticky top-0 z-10 pt-[env(safe-area-inset-top)]">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-baseline justify-between gap-3">
+          <div className="min-w-0">
             <div className="text-sm font-semibold tracking-tight">Tréner</div>
-            <div className="text-xs uppercase tracking-widest text-slate-400">
+            <div className="text-xs uppercase tracking-widest text-slate-400 truncate">
               {profile.name || "Plán"} · cieľ {n1(profile.goalWeight)} kg
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="font-mono tabular-nums text-lg leading-none">
               {avgNow != null ? n1(avgNow) : n1(profile.weight)}
               <span className="text-xs text-slate-400 ml-1">kg</span>
@@ -473,7 +473,7 @@ export default function App() {
         </div>
       )}
 
-      <nav className="fixed bottom-0 inset-x-0 bg-stone-50 border-t border-slate-200">
+      <nav className="fixed bottom-0 inset-x-0 bg-stone-50 border-t border-slate-200 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-3xl mx-auto grid grid-cols-5">
           {TABS.map((t) => {
             const Icon = t.icon;
@@ -482,12 +482,12 @@ export default function App() {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`py-3 flex flex-col items-center gap-1 border-t-2 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-700 focus:ring-inset ${
+                className={`py-3 px-1 flex flex-col items-center gap-1 border-t-2 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-700 focus:ring-inset ${
                   on ? "border-amber-600 text-slate-900" : "border-transparent text-slate-400 hover:text-slate-700"
                 }`}
               >
                 <Icon size={17} />
-                <span className="text-xs uppercase tracking-widest">{t.label}</span>
+                <span className="text-[10px] leading-none uppercase tracking-wide whitespace-nowrap">{t.label}</span>
               </button>
             );
           })}
@@ -512,7 +512,7 @@ function Onboarding({ onDone }) {
   const protein = Math.round(f.weight * 2);
 
   return (
-    <div className="min-h-screen bg-stone-100 text-slate-900 py-8 px-4">
+    <div className="min-h-screen bg-stone-100 text-slate-900 py-8 px-4 overflow-x-hidden">
       <div className="max-w-md mx-auto space-y-5">
         <div>
           <div className="text-xs uppercase tracking-widest text-amber-700 mb-2">Nastavenie</div>
@@ -828,7 +828,7 @@ function Training({ workouts, save }) {
                     <span className="font-mono text-xs text-slate-400 w-6">{si + 1}.</span>
                     <div className="flex-1"><NumField value={s.weight} onChange={(v) => setSet(ei, si, "weight", v)} unit="kg" step={t.step} /></div>
                     <span className="text-slate-300">×</span>
-                    <div className="w-24"><NumField value={s.reps} onChange={(v) => setSet(ei, si, "reps", v)} step={1} /></div>
+                    <div className="w-20"><NumField value={s.reps} onChange={(v) => setSet(ei, si, "reps", v)} step={1} /></div>
                   </div>
                 ))}
               </div>
